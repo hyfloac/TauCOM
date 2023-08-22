@@ -22,6 +22,9 @@ class TauCOMRecipe(ConanFile):
     # Sources are located in the same place as this recipe, copy them to the recipe
     # exports_sources = "CMakeLists.txt", "src/*", "include/*"
 
+    def set_version(self):
+        self.version = self.conan_data["latest"];
+
     def source(self):
         data = self.conan_data["sources"][self.version];
         repo = self.conan_data["sources"]["repos"][data["url"]]

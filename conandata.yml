@@ -5,3 +5,5 @@ sources:
   "0.1.1":
     url: "0.1.0"
     latest: true
+
+latest: "0.1.1"
