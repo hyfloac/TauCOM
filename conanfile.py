@@ -1,5 +1,7 @@
 from conan import ConanFile
 from conan.tools.cmake import CMakeToolchain, CMake, cmake_layout, CMakeDeps
+from conan.tools.files import get
+from conan.tools.scm import Git
 
 class TauCOMRecipe(ConanFile):
     name = "taucom"
@@ -18,7 +20,14 @@ class TauCOMRecipe(ConanFile):
     default_options = { "shared": True }
 
     # Sources are located in the same place as this recipe, copy them to the recipe
-    exports_sources = "CMakeLists.txt", "src/*", "include/*"
+    # exports_sources = "CMakeLists.txt", "src/*", "include/*"
+
+    def source(self):
+        data = self.conan_data["sources"][self.version];
+        git = Git(self)
+        git.clone(url=data["url"], target=".")
+        git.checkout(data["commit"])
+        git.run("submodule update --init --recursive")
 
     def config_options(self):
         if self.settings.os == "Windows":
