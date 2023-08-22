@@ -7,7 +7,7 @@ add_subdirectory(libs/TauUtils)
 
 file(GLOB SOURCES "src/*.cpp")
 file(GLOB_RECURSE HEADERS "include/*.hpp" "include/*.h" "include/*.inl")
-file(GLOB HEADERS_BASE "include/*.hpp" "include/*.inl")
+file(GLOB HEADERS_BASE "include/*.hpp" "include/*.h" "include/*.inl")
 
 set(TAU_COM_SOURCE_FILES ${SOURCES} ${HEADERS_BASE})
 
@@ -22,6 +22,9 @@ endforeach()
 
 source_group("src" FILES ${SOURCES})
 # set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER ${HEADERS_BASE})
+
+
+install(TARGETS ${PROJECT_NAME} ARCHIVE PUBLIC_HEADER)
 
 target_link_libraries(${PROJECT_NAME} TauUtilsDynamicShared)
 
@@ -76,8 +79,6 @@ endif()
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-install(TARGETS ${PROJECT_NAME})
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
