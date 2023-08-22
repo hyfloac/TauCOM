@@ -19,7 +19,7 @@ foreach(_source IN ITEMS ${HEADERS})
 endforeach()
 
 source_group("src" FILES ${SOURCES})
-set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER ${HEADERS_BASE})
+# set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER ${HEADERS_BASE})
 
 target_link_libraries(${PROJECT_NAME} TauUtilsDynamicShared)
 
