@@ -28,7 +28,7 @@ class TauCOMRecipe(ConanFile):
         git = Git(self)
         git.clone(url=repo, target=".")
         if(not ("latest" in data)):
-            git.checkout(data["commit"])
+            git.checkout(data["target"])
         git.run("submodule update --init --recursive")
 
     def config_options(self):
