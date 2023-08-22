@@ -26,7 +26,7 @@ source_group("src" FILES ${SOURCES})
 target_link_libraries(${PROJECT_NAME} TauUtilsDynamicShared)
 
 # Set the include directory.
-target_include_directories(${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include0> $<BUILD_LOCAL_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include1> $<INSTALL_INTERFACE:include2>)
+target_include_directories(${PROJECT_NAME} INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<INSTALL_INTERFACE:include>)
 # Set the source directory.
 target_include_directories(${PROJECT_NAME} PRIVATE src)
 
