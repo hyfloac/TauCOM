@@ -556,6 +556,7 @@ FodyWeavers.xsd
 # End of https://www.toptal.com/developers/gitignore/api/visualstudio,visualstudiocode,rider,c++,c,premake-gmake
 
 libs/*
+!libs/TauUtils
 !libs/x64/
 !freetype.lib
 !FreeImageLib.lib
