@@ -59,7 +59,7 @@ class TauCOMRecipe(ConanFile):
         cmake.install()
 
     def package_info(self):
-        self.cpp_info.libs = ["TauCOM"]
+        self.cpp_info.libs = ["taucom"]
 
     
 
