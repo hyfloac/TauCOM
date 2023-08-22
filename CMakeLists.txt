@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.15)
 project(TauCOM VERSION 0.1.0 LANGUAGES CXX C)
 
+include(CheckCCompilerFlag)
+
 add_subdirectory(libs/TauUtils)
 
 file(GLOB SOURCES "src/*.cpp")
