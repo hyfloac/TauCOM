@@ -1,120 +1,175 @@
-#include <iostream>
-#include "TauCOM.h"
+#include "TauCOM.hpp"
+#include "TauCOM.impl.hpp"
+#include <allocator/TauAllocator.hpp>
 
+namespace tau::com {
 
+class ComManager final : public IComManager
+{
+    DEFAULT_CONSTRUCT_PU(ComManager);
+    DEFAULT_DESTRUCT(ComManager);
+    TAU_COM_IMPL_REF_COUNT();
+public:
+    ComManager(const FactoryMap& factories) noexcept;
+    ComManager(FactoryMap&& factories) noexcept;
 
-void TauCOM(){
-    
+    inline ComManager(const ComManager& copy) noexcept;
+    inline ComManager(ComManager&& move) noexcept;
+    inline ComManager& operator=(const ComManager& copy) noexcept;
+    inline ComManager& operator=(ComManager&& move) noexcept;
 
-    #ifdef NDEBUG
-    std::cout << "TauCOM/0.1.0: Hello World Release!\n";
-    #else
-    std::cout << "TauCOM/0.1.0: Hello World Debug!\n";
-    #endif
+    ResultCode QueryInterface(const UUID& iid, void** const pInterface) noexcept override;
+    ResultCode RegisterIidFactory(const UUID& iid, const ComFactoryFunc factory) noexcept override;
+    ResultCode CreateObject(const UUID& iid, void** const pInterface, const BaseConstructionInfo* const pConstructionInfo) noexcept override;
+public:
+    static ResultCode Factory(const UUID& iid, void** const pInterface, const BaseConstructionInfo* const pConstructionInfo) noexcept;
+private:
+    FactoryMap m_Factories;
+};
 
-    // ARCHITECTURES
-    #ifdef _M_X64
-    std::cout << "  TauCOM/0.1.0: _M_X64 defined\n";
-    #endif
+ComManager::ComManager(const FactoryMap& factories) noexcept
+    : m_Factories(factories)
+{ }
 
-    #ifdef _M_IX86
-    std::cout << "  TauCOM/0.1.0: _M_IX86 defined\n";
-    #endif
+ComManager::ComManager(FactoryMap&& factories) noexcept
+    : m_Factories(::std::move(factories))
+{ }
 
-    #ifdef _M_ARM64
-    std::cout << "  TauCOM/0.1.0: _M_ARM64 defined\n";
-    #endif
+ComManager::ComManager(const ComManager& copy) noexcept
+    : m_Factories(copy.m_Factories)
+{ }
 
-    #if __i386__
-    std::cout << "  TauCOM/0.1.0: __i386__ defined\n";
-    #endif
+ComManager::ComManager(ComManager&& move) noexcept
+    : m_Factories(::std::move(move.m_Factories))
+{ }
 
-    #if __x86_64__
-    std::cout << "  TauCOM/0.1.0: __x86_64__ defined\n";
-    #endif
+ComManager& ComManager::operator=(const ComManager& copy) noexcept
+{
+    if(this == &copy)
+    {
+        return *this;
+    }
 
-    #if __aarch64__
-    std::cout << "  TauCOM/0.1.0: __aarch64__ defined\n";
-    #endif
+    m_Factories = copy.m_Factories;
 
-    // Libstdc++
-    #if defined _GLIBCXX_USE_CXX11_ABI
-    std::cout << "  TauCOM/0.1.0: _GLIBCXX_USE_CXX11_ABI "<< _GLIBCXX_USE_CXX11_ABI << "\n";
-    #endif
-
-    // MSVC runtime
-    #if defined(_DEBUG)
-        #if defined(_MT) && defined(_DLL)
-        std::cout << "  TauCOM/0.1.0: MSVC runtime: MultiThreadedDebugDLL\n";
-        #elif defined(_MT)
-        std::cout << "  TauCOM/0.1.0: MSVC runtime: MultiThreadedDebug\n";
-        #endif
-    #else
-        #if defined(_MT) && defined(_DLL)
-        std::cout << "  TauCOM/0.1.0: MSVC runtime: MultiThreadedDLL\n";
-        #elif defined(_MT)
-        std::cout << "  TauCOM/0.1.0: MSVC runtime: MultiThreaded\n";
-        #endif
-    #endif
-
-    // COMPILER VERSIONS
-    #if _MSC_VER
-    std::cout << "  TauCOM/0.1.0: _MSC_VER" << _MSC_VER<< "\n";
-    #endif
-
-    #if _MSVC_LANG
-    std::cout << "  TauCOM/0.1.0: _MSVC_LANG" << _MSVC_LANG<< "\n";
-    #endif
-
-    #if __cplusplus
-    std::cout << "  TauCOM/0.1.0: __cplusplus" << __cplusplus<< "\n";
-    #endif
-
-    #if __INTEL_COMPILER
-    std::cout << "  TauCOM/0.1.0: __INTEL_COMPILER" << __INTEL_COMPILER<< "\n";
-    #endif
-
-    #if __GNUC__
-    std::cout << "  TauCOM/0.1.0: __GNUC__" << __GNUC__<< "\n";
-    #endif
-
-    #if __GNUC_MINOR__
-    std::cout << "  TauCOM/0.1.0: __GNUC_MINOR__" << __GNUC_MINOR__<< "\n";
-    #endif
-
-    #if __clang_major__
-    std::cout << "  TauCOM/0.1.0: __clang_major__" << __clang_major__<< "\n";
-    #endif
-
-    #if __clang_minor__
-    std::cout << "  TauCOM/0.1.0: __clang_minor__" << __clang_minor__<< "\n";
-    #endif
-
-    #if __apple_build_version__
-    std::cout << "  TauCOM/0.1.0: __apple_build_version__" << __apple_build_version__<< "\n";
-    #endif
-
-    // SUBSYSTEMS
-
-    #if __MSYS__
-    std::cout << "  TauCOM/0.1.0: __MSYS__" << __MSYS__<< "\n";
-    #endif
-
-    #if __MINGW32__
-    std::cout << "  TauCOM/0.1.0: __MINGW32__" << __MINGW32__<< "\n";
-    #endif
-
-    #if __MINGW64__
-    std::cout << "  TauCOM/0.1.0: __MINGW64__" << __MINGW64__<< "\n";
-    #endif
-
-    #if __CYGWIN__
-    std::cout << "  TauCOM/0.1.0: __CYGWIN__" << __CYGWIN__<< "\n";
-    #endif
+    return *this;
 }
 
-void TauCOM_print_vector(const std::vector<std::string> &strings) {
-    for(std::vector<std::string>::const_iterator it = strings.begin(); it != strings.end(); ++it) {
-        std::cout << "TauCOM/0.1.0 " << *it << std::endl;
+ComManager& ComManager::operator=(ComManager&& move) noexcept
+{
+    if(this == &move)
+    {
+        return *this;
     }
+
+    m_Factories = ::std::move(move.m_Factories);
+
+    return *this;
+}
+
+ResultCode ComManager::QueryInterface(const UUID& iid, void** const pInterface) noexcept
+{
+    if(!pInterface)
+    {
+        return RC_NullParam;
+    }
+
+    if(iid == iid_of<IUnknown> || iid == iid_of<IComManager>)
+    {
+        *pInterface = static_cast<IComManager*>(this);
+    }
+    else
+    {
+        return RC_InterfaceNotFound;
+    }
+
+    AddReference();
+    return RC_Success;
+}
+
+ResultCode ComManager::RegisterIidFactory(const UUID& iid, const ComFactoryFunc factory) noexcept
+{
+    if(!factory)
+    {
+        return RC_NullParam;
+    }
+
+    ResultCode ret = RC_Success;
+
+    if(m_Factories.contains(iid))
+    {
+        ret = RC_FactoryAlreadyRegistered;
+    }
+
+    m_Factories[iid] = factory;
+
+    return ret;
+}
+
+ResultCode ComManager::CreateObject(const UUID& iid, void** const pInterface, const BaseConstructionInfo* const pConstructionInfo) noexcept
+{
+    if(!m_Factories.contains(iid))
+    {
+        return RC_InterfaceNotFound;
+    }
+
+    return m_Factories[iid](iid, pInterface, pConstructionInfo);
+}
+
+ResultCode ComManager::Factory(const UUID& iid, void** const pInterface, const BaseConstructionInfo* const pConstructionInfo) noexcept
+{
+    if(!pInterface)
+    {
+        return RC_NullParam;
+    }
+
+    if(iid != iid_of<IComManager>)
+    {
+        return RC_InterfaceNotFound;
+    }
+
+    if(pConstructionInfo)
+    {
+        if(pConstructionInfo->Iid != iid_of<IComManager>)
+        {
+            return RC_InterfaceNotFound;
+        }
+
+        const ConstructionInfo* const constructionInfo = static_cast<const ConstructionInfo*>(pConstructionInfo);
+
+        *pInterface = BasicTauAllocator<AllocationTracking::None>::Instance().AllocateT<ComManager>(constructionInfo->Factories);
+    }
+    else
+    {
+        *pInterface = BasicTauAllocator<AllocationTracking::None>::Instance().AllocateT<ComManager>();
+    }
+
+    return RC_Success;
+}
+
+static ComManager* s_GlobalComManager = nullptr;
+
+}
+
+extern "C" TAU_COM_LIB::tau::com::ResultCode TauComGetComManager(::tau::com::IComManager** const pInterface) noexcept
+{
+    using namespace tau::com;
+
+    if(!pInterface)
+    {
+        return RC_NullParam;
+    }
+
+    if(!s_GlobalComManager)
+    {
+
+        ComManager::FactoryMap factories;
+        factories[iid_of<IComManager>] = ComManager::Factory;
+
+        s_GlobalComManager = BasicTauAllocator<AllocationTracking::None>::Instance().AllocateT<ComManager>(::std::move(factories));
+    }
+
+    *pInterface = s_GlobalComManager;
+
+    return RC_Success;
 }

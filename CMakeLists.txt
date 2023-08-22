@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.23)
-project(taucom VERSION 0.1.0 LANGUAGES CXX C)
+project(TauCOM VERSION 0.1.0 LANGUAGES CXX C)
 
 include(CheckCCompilerFlag)
 
@@ -17,7 +17,7 @@ foreach(_source IN ITEMS ${HEADERS})
     get_filename_component(_source_path "${_source}" PATH)
     string(REPLACE "${CMAKE_SOURCE_DIR}" "" _group_path "${_source_path}")
     string(REPLACE "/" "\\" _group_path "${_group_path}")
-    source_group("include\\${_group_path}" FILES "${_source}")
+    source_group("${_group_path}" FILES "${_source}")
 endforeach()
 
 source_group("src" FILES ${SOURCES})
@@ -63,7 +63,7 @@ if(CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
     set_target_properties(${PROJECT_NAME} PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
 endif()
 
-target_compile_definitions(${PROJECT_NAME} PRIVATE -DTAU_UTILS_IMPORT_SHARED)
+target_compile_definitions(${PROJECT_NAME} PRIVATE -DTAU_UTILS_IMPORT_SHARED -DTAU_COM_BUILD_SHARED)
 
 check_c_compiler_flag(/wd5030 HAS_UNRECOGNIZED_ATTRIBUTES_WARNING)
 check_c_compiler_flag(/wd4251 HAS_DLL_INTERFACE_WARNING)
