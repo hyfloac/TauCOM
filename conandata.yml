@@ -1,0 +1,5 @@
+sources:
+  "0.1.0":
+    url: "https://github.com/hyfloac/TauCOM/archive/refs/heads/master.zip"
+    strip_root: true
+    
