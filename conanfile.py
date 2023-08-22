@@ -5,7 +5,7 @@ from conan.tools.scm import Git
 
 class TauCOMRecipe(ConanFile):
     name = "taucom"
-    version = "0.1.0"
+    version = "0.1.1"
     package_type = "library"
 
     # Optional metadata

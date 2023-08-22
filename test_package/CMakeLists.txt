@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.15)
 project(PackageTest CXX)
 
-find_package(TauCOM CONFIG REQUIRED)
+find_package(taucom CONFIG REQUIRED)
 
 
 

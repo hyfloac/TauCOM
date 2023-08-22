@@ -2,6 +2,6 @@ sources:
   repos:
     "0.1.0": "https://github.com/hyfloac/TauCOM.git"
 
-  "0.1.0":
+  "0.1.1":
     url: "0.1.0"
     latest: true
