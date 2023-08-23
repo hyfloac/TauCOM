@@ -8,6 +8,7 @@ from conan.tools.build import can_run
 class TauCOMTestConan(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
     generators = "CMakeDeps", "CMakeToolchain"
+    requires = "tauutils/[^1.1.1]"
 
     def requirements(self):
         self.requires(self.tested_reference_str)
@@ -22,5 +23,5 @@ class TauCOMTestConan(ConanFile):
 
     def test(self):
         if can_run(self):
-            cmd = os.path.join(self.cpp.build.bindir, "example")
+            cmd = os.path.join(self.cpp.build.bindir, "PackageTest")
             self.run(cmd, env="conanrun")

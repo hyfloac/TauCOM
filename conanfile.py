@@ -6,6 +6,7 @@ from conan.tools.scm import Git
 class TauCOMRecipe(ConanFile):
     name = "taucom"
     package_type = "library"
+    requires = "tauutils/[^1.1.1]"
 
     # Optional metadata
     license = ""
@@ -19,19 +20,19 @@ class TauCOMRecipe(ConanFile):
     default_options = { "shared": True }
 
     # Sources are located in the same place as this recipe, copy them to the recipe
-    # exports_sources = "CMakeLists.txt", "src/*", "include/*"
+    exports_sources = "CMakeLists.txt", "src/*", "include/*"
 
     def set_version(self):
         self.version = self.conan_data["latest"];
 
-    def source(self):
-        data = self.conan_data["sources"][self.version];
-        repo = self.conan_data["sources"]["repos"][data["url"]]
-        git = Git(self)
-        git.clone(url=repo, target=".")
-        if(not ("latest" in data)):
-            git.checkout(data["target"])
-        git.run("submodule update --init --recursive")
+    # def source(self):
+    #     data = self.conan_data["sources"][self.version];
+    #     repo = self.conan_data["sources"]["repos"][data["url"]]
+    #     git = Git(self)
+    #     git.clone(url=repo, target=".")
+    #     if(not ("latest" in data)):
+    #         git.checkout(data["target"])
+    #     git.run("submodule update --init --recursive")
 
     def config_options(self):
         if self.settings.os == "Windows":
@@ -60,6 +61,7 @@ class TauCOMRecipe(ConanFile):
 
     def package_info(self):
         self.cpp_info.libs = ["taucom"]
+    
 
     
 

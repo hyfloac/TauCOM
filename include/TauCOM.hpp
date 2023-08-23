@@ -79,7 +79,6 @@ inline constexpr const UUID& uuid_of = ComUUID<T>::IID;
 template<typename T>
 inline constexpr const UUID& iid_of = ComUUID<T>::IID;
 
-
 enum ResultCode : i32
 {
     RC_Success = 0,
@@ -122,6 +121,98 @@ public:
 };
 
 TAU_DECL_UUID(IUnknown, 0x89D0171D1E547699ull, 0x3513C89A25664A40ull);
+
+template<typename T>
+class ComRef final
+{
+public:
+    ComRef() noexcept
+        : m_Ptr(nullptr)
+    { }
+
+    ComRef(T* const ptr) noexcept
+        : m_Ptr(ptr)
+    { }
+
+    ComRef(nullptr_t) noexcept
+        : m_Ptr(nullptr)
+    { }
+
+    ~ComRef() noexcept
+    {
+        ReleaseReference();
+    }
+
+    ComRef(const ComRef<T>& copy) noexcept
+        : m_Ptr(copy.m_Ptr)
+    {
+        AddReference();
+    }
+
+    ComRef(ComRef<T>&& move) noexcept
+        : m_Ptr(move.m_Ptr)
+    {
+        move.m_Ptr = nullptr;
+    }
+
+    ComRef<T>& operator=(const ComRef<T>& copy) noexcept
+    {
+        if(this == &copy)
+        {
+            return *this;
+        }
+
+        ReleaseReference();
+
+        m_Ptr = copy.m_Ptr;
+        AddReference();
+
+        return *this;
+    }
+
+    ComRef<T>& operator=(ComRef<T>&& move) noexcept
+    {
+        if(this == &move)
+        {
+            return *this;
+        }
+
+        ReleaseReference();
+
+        m_Ptr = move.m_Ptr;
+        move.m_Ptr = nullptr;
+
+        return *this;
+    }
+
+    [[nodiscard]] operator bool() const noexcept { return m_Ptr; }
+
+    [[nodiscard]] T* operator->() const noexcept { return m_Ptr; }
+
+    [[nodiscard]] T* Get() const noexcept { return m_Ptr; }
+
+    [[nodiscard]] bool operator==(const ComRef<T>& other) const noexcept { return m_Ptr == other.m_Ptr; }
+    [[nodiscard]] bool operator!=(const ComRef<T>& other) const noexcept { return !(*this == other); }
+
+    i32 AddReference() noexcept
+    {
+        if(m_Ptr)
+        {
+            return m_Ptr->AddReference();
+        }
+        return 0;
+    }
+    i32 ReleaseReference() noexcept
+    {
+        if(m_Ptr)
+        {
+            return m_Ptr->ReleaseReference();
+        }
+        return 0;
+    }
+private:
+    T* m_Ptr;
+};
 
 class IComManager : public IUnknown
 {

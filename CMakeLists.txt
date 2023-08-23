@@ -3,7 +3,8 @@ project(TauCOM VERSION 0.1.0 LANGUAGES CXX C)
 
 include(CheckCCompilerFlag)
 
-add_subdirectory(libs/TauUtils)
+# add_subdirectory(libs/TauUtils)
+find_package(tauutils CONFIG REQUIRED)
 
 file(GLOB SOURCES "src/*.cpp")
 file(GLOB_RECURSE HEADERS "include/*.hpp" "include/*.h" "include/*.inl")
@@ -26,10 +27,11 @@ source_group("src" FILES ${SOURCES})
 target_sources(${PROJECT_NAME} PUBLIC ${SOURCES})
 target_sources(${PROJECT_NAME} PUBLIC FILE_SET HEADERS BASE_DIRS include FILES ${HEADERS})
 
-target_link_libraries(${PROJECT_NAME} TauUtilsDynamicShared)
+target_link_libraries(${PROJECT_NAME} tauutils::TauUtilsDynamicShared)
 
 # Set the include directory.
-target_include_directories(${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<INSTALL_INTERFACE:include>)
+# target_include_directories(${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<INSTALL_INTERFACE:include>)
+target_include_directories(${PROJECT_NAME} PUBLIC include)
 # Set the source directory.
 target_include_directories(${PROJECT_NAME} PRIVATE src)
 

@@ -1,5 +1,5 @@
 #include "TauCOM.hpp"
-#incldue "TauCOM.impl.hpp"
+#include "TauCOM.impl.hpp"
 #include <Console.hpp>
 #include <ConPrinter.hpp>
 #include <String.hpp>
@@ -35,7 +35,7 @@ public:
 
 TAU_DECL_UUID(IConsoleLinePrinter, 0x98716AFD4475A23Cull, 0xB8565C0769E9454Eull);
 
-ResultCode RegisterConsolePrinter(IComManager* comManager) noexcept;
+ResultCode RegisterConsolePrinter(IComManager* const comManager) noexcept;
 
 }
 
@@ -47,15 +47,75 @@ int main(int argCount, char* args[])
 
     IComManager* comManager;
 
+    ConPrinter::PrintLn("Getting ComManager.");
+
     ResultCode status = TauComGetComManager(&comManager);
 
     if(!IsSuccess(status))
     {
-        ConPrinter::PrintLn("Failed to get global IComManager.");
+        ConPrinter::PrintLn("Failed to get global ComManager.");
         return -101;
     }
 
+    ConPrinter::PrintLn("Registering ConsolePrinter.");
 
+    status = RegisterConsolePrinter(comManager);
+    if(!IsSuccess(status))
+    {
+        ConPrinter::PrintLn("Failed to register ConsolePrinter.");
+        return -201;
+    }
+
+    IConsolePrinter::ConstructionInfo printerConstructionInfo { };
+    printerConstructionInfo.Iid = iid_of<IConsolePrinter>;
+    printerConstructionInfo.pNext = nullptr;
+    printerConstructionInfo.PrefixString = u8"";
+
+    ConPrinter::PrintLn("Creating IConsolePrinter.");
+
+    IConsolePrinter* printer;
+    status = comManager->CreateObject<IConsolePrinter>(&printer, &printerConstructionInfo);
+
+    if(!IsSuccess(status))
+    {
+        ConPrinter::PrintLn("Failed to create ConsolePrinter.");
+        return -103;
+    }
+
+    printer->Print(u8"Hello");
+
+    IConsoleLinePrinter* linePrinter;
+    printer->QueryInterface<IConsoleLinePrinter>(&linePrinter);
+
+    linePrinter->PrintLn(u8" World!");
+
+
+    linePrinter->ReleaseReference();
+    printer->ReleaseReference();
+
+    printerConstructionInfo.PrefixString = u8"> ";
+
+    ConPrinter::PrintLn("Creating IConsolePrinter with prefix.");
+
+    status = comManager->CreateObject<IConsolePrinter>(&printer, &printerConstructionInfo);
+
+    if(!IsSuccess(status))
+    {
+        ConPrinter::PrintLn("Failed to create ConsolePrinter.");
+        return -103;
+    }
+
+    printer->Print(u8"Hello");
+
+    printer->QueryInterface<IConsoleLinePrinter>(&linePrinter);
+
+    linePrinter->PrintLn(u8" World!");
+    
+    printer->ReleaseReference();
+
+    linePrinter->PrintLn(u8"Hello World!");
+
+    linePrinter->ReleaseReference();
 
     return 0;
 }
@@ -122,12 +182,12 @@ public:
     {
         if(!pInterface)
         {
-            return ResultCode::NullParam;
+            return RC_NullParam;
         }
 
         if(!pConstructionInfo)
         {
-            return ResultCode::NullParam;
+            return RC_NullParam;
         }
 
         if(iid == iid_of<IConsolePrinter> && pConstructionInfo->Iid == iid_of<IConsolePrinter>)
@@ -149,16 +209,16 @@ private:
     C8DynString m_PrefixString;
 };
 
-ResultCode RegisterConsolePrinter(IComManager* comManager) noexcept
+ResultCode RegisterConsolePrinter(IComManager* const comManager) noexcept
 {
     if(!comManager)
     {
-        return ResultCode::NullParam;
+        return RC_NullParam;
     }
 
     ResultCode result = comManager->RegisterIidFactory(iid_of<IConsolePrinter>, ConsolePrinter::Factory);
 
-    if(IsFailure(result) && result != ResultCode::FactoryAlreadyRegistered)
+    if(IsFailure(result) && result != RC_FactoryAlreadyRegistered)
     {
         return result;
     }

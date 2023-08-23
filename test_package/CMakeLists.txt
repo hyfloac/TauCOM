@@ -4,10 +4,11 @@ project(PackageTest LANGUAGES CXX C)
 include(CheckCCompilerFlag)
 
 find_package(taucom CONFIG REQUIRED)
-add_subdirectory(../libs/TauUtils)
+# add_subdirectory(../libs/TauUtils)
+find_package(tauutils CONFIG REQUIRED)
 
 add_executable(${PROJECT_NAME} src/example.cpp)
-target_link_libraries(${PROJECT_NAME} taucom::taucom TauUtilsDynamicShared)
+target_link_libraries(${PROJECT_NAME} taucom::taucom tauutils::TauUtilsDynamicShared)
 
 # Set C++20
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20)
