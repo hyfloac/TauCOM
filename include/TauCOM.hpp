@@ -68,9 +68,11 @@ struct ComUUID final
 };
 
 #define TAU_DECL_UUID(T, LOW, HIGH) \
+    namespace tau::com { \
     template<> \
     struct ComUUID<T> final { \
-        static inline constexpr UUID IID = UUID((LOW), (HIGH)); \
+        static inline constexpr ::tau::com::UUID IID = ::tau::com::UUID((LOW), (HIGH)); \
+    }; \
     }
 
 template<typename T>
@@ -84,6 +86,8 @@ enum ResultCode : i32
     RC_Success = 0,
     RC_NullParam = -1,
     RC_InterfaceNotFound = -2,
+    RC_Fail = -3,
+    RC_InitializationError = -4,
     RC_FactoryAlreadyRegistered = 1
 };
 
@@ -120,7 +124,6 @@ public:
     }
 };
 
-TAU_DECL_UUID(IUnknown, 0x89D0171D1E547699ull, 0x3513C89A25664A40ull);
 
 template<typename T>
 class ComRef final
@@ -155,6 +158,15 @@ public:
         move.m_Ptr = nullptr;
     }
 
+    ComRef<T>& operator=(nullptr_t) noexcept
+    {
+        ReleaseReference();
+
+        m_Ptr = nullptr;
+
+        return *this;
+    }
+
     ComRef<T>& operator=(const ComRef<T>& copy) noexcept
     {
         if(this == &copy)
@@ -185,11 +197,14 @@ public:
         return *this;
     }
 
+    [[nodiscard]] operator T*() const noexcept { return m_Ptr; }
     [[nodiscard]] operator bool() const noexcept { return m_Ptr; }
 
     [[nodiscard]] T* operator->() const noexcept { return m_Ptr; }
 
     [[nodiscard]] T* Get() const noexcept { return m_Ptr; }
+    [[nodiscard]] T** Load() noexcept { return &m_Ptr; }
+    [[nodiscard]] void** LoadVoid() noexcept { return reinterpret_cast<void**>(&m_Ptr); }
 
     [[nodiscard]] bool operator==(const ComRef<T>& other) const noexcept { return m_Ptr == other.m_Ptr; }
     [[nodiscard]] bool operator!=(const ComRef<T>& other) const noexcept { return !(*this == other); }
@@ -202,6 +217,7 @@ public:
         }
         return 0;
     }
+
     i32 ReleaseReference() noexcept
     {
         if(m_Ptr)
@@ -248,8 +264,9 @@ public:
     }
 };
 
-TAU_DECL_UUID(IComManager, 0xA84460A844FB841Cull, 0x8441F8C9B9F14C8Dull);
-
 }
+
+TAU_DECL_UUID(IUnknown, 0x89D0171D1E547699ull, 0x3513C89A25664A40ull);
+TAU_DECL_UUID(IComManager, 0xA84460A844FB841Cull, 0x8441F8C9B9F14C8Dull);
 
 extern "C" TAU_COM_LIB ::tau::com::ResultCode TauComGetComManager(::tau::com::IComManager** const pInterface) noexcept;

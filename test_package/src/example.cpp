@@ -22,9 +22,6 @@ public:
     virtual void Print(const C8DynString& str) noexcept = 0;
 };
 
-TAU_DECL_UUID(IConsolePrinter, 0xBCE8AB2D7BC458BEull, 0xED4A89E7B2284D6Bull);
-
-
 class IConsoleLinePrinter : public IUnknown
 {
 public:
@@ -33,10 +30,16 @@ public:
     virtual void PrintLn(const C8DynString& str) noexcept = 0;
 };
 
-TAU_DECL_UUID(IConsoleLinePrinter, 0x98716AFD4475A23Cull, 0xB8565C0769E9454Eull);
-
 ResultCode RegisterConsolePrinter(IComManager* const comManager) noexcept;
 
+}
+
+TAU_DECL_UUID(IConsolePrinter, 0xBCE8AB2D7BC458BEull, 0xED4A89E7B2284D6Bull);
+TAU_DECL_UUID(IConsoleLinePrinter, 0x98716AFD4475A23Cull, 0xB8565C0769E9454Eull);
+
+static void PrintWorld(::tau::com::IConsoleLinePrinter* printer) noexcept
+{
+    printer->PrintLn(u8" World!");
 }
 
 int main(int argCount, char* args[]) 
@@ -84,13 +87,13 @@ int main(int argCount, char* args[])
 
     printer->Print(u8"Hello");
 
-    IConsoleLinePrinter* linePrinter;
-    printer->QueryInterface<IConsoleLinePrinter>(&linePrinter);
+    ComRef<IConsoleLinePrinter> linePrinter;
+    printer->QueryInterface<IConsoleLinePrinter>(linePrinter.Load());
 
-    linePrinter->PrintLn(u8" World!");
+    PrintWorld(linePrinter);
 
 
-    linePrinter->ReleaseReference();
+    linePrinter = nullptr;
     printer->ReleaseReference();
 
     printerConstructionInfo.PrefixString = u8"> ";
@@ -107,15 +110,13 @@ int main(int argCount, char* args[])
 
     printer->Print(u8"Hello");
 
-    printer->QueryInterface<IConsoleLinePrinter>(&linePrinter);
+    printer->QueryInterface<IConsoleLinePrinter>(linePrinter.Load());
 
     linePrinter->PrintLn(u8" World!");
     
     printer->ReleaseReference();
 
     linePrinter->PrintLn(u8"Hello World!");
-
-    linePrinter->ReleaseReference();
 
     return 0;
 }
