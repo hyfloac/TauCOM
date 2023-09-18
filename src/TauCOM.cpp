@@ -4,7 +4,7 @@
 
 namespace tau::com {
 
-class ComManager final : public IComManager
+class ComManager final : public IComManager1
 {
     DEFAULT_CONSTRUCT_PU(ComManager);
     DEFAULT_DESTRUCT(ComManager);
@@ -18,9 +18,17 @@ public:
     inline ComManager& operator=(const ComManager& copy) noexcept;
     inline ComManager& operator=(ComManager&& move) noexcept;
 
+    // IUnknown
     ResultCode QueryInterface(const UUID& iid, void** const pInterface) noexcept override;
+
+    // IComManager
     ResultCode RegisterIidFactory(const UUID& iid, const ComFactoryFunc factory) noexcept override;
     ResultCode CreateObject(const UUID& iid, void** const pInterface, const BaseConstructionInfo* const pConstructionInfo) noexcept override;
+
+    // IComManager1
+    ResultCode UnregisterIidFactory(const UUID& iid) noexcept override;
+    ResultCode GetIidFactory(const UUID& iid, ComFactoryFunc* const factory) noexcept override;
+    ResultCode Duplicate(IComManager1** const comManager) noexcept override;
 public:
     static ResultCode Factory(const UUID& iid, void** const pInterface, const BaseConstructionInfo* const pConstructionInfo) noexcept;
 private:
@@ -74,9 +82,9 @@ ResultCode ComManager::QueryInterface(const UUID& iid, void** const pInterface) 
         return RC_NullParam;
     }
 
-    if(iid == iid_of<IUnknown> || iid == iid_of<IComManager>)
+    if(iid == iid_of<IUnknown> || iid == iid_of<IComManager> || iid == iid_of<IComManager1>)
     {
-        *pInterface = static_cast<IComManager*>(this);
+        *pInterface = static_cast<IComManager1*>(this);
     }
     else
     {
@@ -116,6 +124,41 @@ ResultCode ComManager::CreateObject(const UUID& iid, void** const pInterface, co
     return m_Factories[iid](iid, pInterface, pConstructionInfo);
 }
 
+ResultCode ComManager::UnregisterIidFactory(const UUID& iid) noexcept
+{
+    if(!m_Factories.contains(iid))
+    {
+        return RC_InterfaceNotFound;
+    }
+
+    (void) m_Factories.erase(iid);
+
+    return RC_Success;
+}
+
+ResultCode ComManager::GetIidFactory(const UUID& iid, ComFactoryFunc* const factory) noexcept
+{
+    if(!m_Factories.contains(iid))
+    {
+        *factory = nullptr;
+        return RC_InterfaceNotFound;
+    }
+
+    *factory = m_Factories[iid];
+
+    return RC_Success;
+}
+
+ResultCode ComManager::Duplicate(IComManager1** const comManager) noexcept
+{
+    ConstructionInfo constructionInfo;
+    constructionInfo.Iid = iid_of<IComManager1>;
+    constructionInfo.pNext = nullptr;
+    constructionInfo.Factories = m_Factories;
+
+    return IComManager::CreateObject<IComManager1>(comManager, &constructionInfo);
+}
+
 ResultCode ComManager::Factory(const UUID& iid, void** const pInterface, const BaseConstructionInfo* const pConstructionInfo) noexcept
 {
     if(!pInterface)
@@ -130,7 +173,7 @@ ResultCode ComManager::Factory(const UUID& iid, void** const pInterface, const B
 
     if(pConstructionInfo)
     {
-        if(pConstructionInfo->Iid != iid_of<IComManager>)
+        if(pConstructionInfo->Iid != iid_of<IComManager> && pConstructionInfo->Iid != iid_of<IComManager1>)
         {
             return RC_InterfaceNotFound;
         }
@@ -165,6 +208,7 @@ extern "C" TAU_COM_LIB::tau::com::ResultCode TauComGetComManager(::tau::com::ICo
 
         ComManager::FactoryMap factories;
         factories[iid_of<IComManager>] = ComManager::Factory;
+        factories[iid_of<IComManager1>] = ComManager::Factory;
 
         s_GlobalComManager = BasicTauAllocator<AllocationTracking::None>::Instance().AllocateT<ComManager>(::std::move(factories));
     }

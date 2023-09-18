@@ -53,7 +53,18 @@ struct hash<::tau::com::UUID>
 {
     [[nodiscard]] ::std::size_t operator()(const ::tau::com::UUID& uuid) const noexcept
     {
-        return uuid.Low ^ uuid.High;
+        if constexpr(sizeof(::std::size_t) == sizeof(u64))
+        {
+            return uuid.Low ^ uuid.High;
+        }
+        else if constexpr(sizeof(::std::size_t) == sizeof(u32))
+        {
+            const u32 lh = static_cast<u32>(uuid.Low >> 32);
+            const u32 ll = static_cast<u32>(uuid.Low & 0xFFFFFFFF);
+            const u32 hh = static_cast<u32>(uuid.High >> 32);
+            const u32 hl = static_cast<u32>(uuid.High & 0xFFFFFFFF);
+            return lh ^ ll ^ hh ^ hl;
+        }
     }
 };
 
@@ -88,7 +99,10 @@ enum ResultCode : i32
     RC_InterfaceNotFound = -2,
     RC_Fail = -3,
     RC_InitializationError = -4,
-    RC_FactoryAlreadyRegistered = 1
+    RC_InvalidParam = -5,
+    RC_FactoryAlreadyRegistered = 1,
+    RC_Timeout = 2,
+    RC_AsyncReturn = 3,
 };
 
 static bool IsSuccess(const ResultCode result) noexcept { return static_cast<i32>(result) >= 0; }
@@ -264,9 +278,22 @@ public:
     }
 };
 
+class IComManager1 : public IComManager
+{
+    DEFAULT_CONSTRUCT_PO(IComManager1);
+    DEFAULT_CM_PO(IComManager1);
+    DEFAULT_DESTRUCT_VI(IComManager1);
+public:
+    virtual ResultCode UnregisterIidFactory(const UUID& iid) noexcept = 0;
+    virtual ResultCode GetIidFactory(const UUID& iid, ComFactoryFunc* const factory) noexcept = 0;
+    virtual ResultCode Duplicate(IComManager1** const comManager) noexcept = 0;
+};
+
 }
 
-TAU_DECL_UUID(IUnknown, 0x89D0171D1E547699ull, 0x3513C89A25664A40ull);
-TAU_DECL_UUID(IComManager, 0xA84460A844FB841Cull, 0x8441F8C9B9F14C8Dull);
+TAU_DECL_UUID(::tau::com::IUnknown, 0x89D0171D1E547699ull, 0x3513C89A25664A40ull);
+TAU_DECL_UUID(::tau::com::IComManager, 0xA84460A844FB841Cull, 0x8441F8C9B9F14C8Dull);
+TAU_DECL_UUID(::tau::com::IComManager1, 0x2F6E3C1FFB854DD1ull, 0x8A17434B93524BB7ull);
+
 
 extern "C" TAU_COM_LIB ::tau::com::ResultCode TauComGetComManager(::tau::com::IComManager** const pInterface) noexcept;
