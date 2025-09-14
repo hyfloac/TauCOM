@@ -8,7 +8,7 @@ find_package(taucom CONFIG REQUIRED)
 find_package(tauutils CONFIG REQUIRED)
 
 add_executable(${PROJECT_NAME} src/example.cpp)
-target_link_libraries(${PROJECT_NAME} taucom::taucom tauutils::TauUtilsDynamicShared)
+target_link_libraries(${PROJECT_NAME} taucom::taucom tauutils::tauutils)
 
 # Set C++20
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20)
