@@ -30,7 +30,7 @@ public:
     virtual void PrintLn(const C8DynString& str) noexcept = 0;
 };
 
-ResultCode RegisterConsolePrinter(IComManager* const comManager) noexcept;
+EResultCode RegisterConsolePrinter(IComManager* const comManager) noexcept;
 
 }
 
@@ -52,7 +52,7 @@ int main(int argCount, char* args[])
 
     ConPrinter::PrintLn("Getting ComManager.");
 
-    ResultCode status = TauComGetComManager(&comManager);
+    EResultCode status = TauComGetComManager(&comManager);
 
     if(!IsSuccess(status))
     {
@@ -127,15 +127,15 @@ namespace tau::com {
 class ConsolePrinter final : public IConsolePrinter, public IConsoleLinePrinter
 {
     DEFAULT_CONSTRUCT_PU(ConsolePrinter);
-    DEFAULT_CM_PU(ConsolePrinter);
+    DELETE_CM(ConsolePrinter);
     DEFAULT_DESTRUCT(ConsolePrinter);
-TAU_COM_IMPL_REF_COUNT();
+    TAU_COM_IMPL_REF_COUNT();
 public:
     ConsolePrinter(const C8DynString& prefixString) noexcept
         : m_PrefixString(prefixString)
     { }
 
-    ResultCode QueryInterface(const UUID& iid, void** const pInterface) noexcept override
+    EResultCode QueryInterface(const UUID& iid, void** const pInterface) noexcept override
     {
         if(!pInterface)
         {
@@ -179,7 +179,7 @@ public:
         ConPrinter::PrintLn("{}", str);
     }
 public:
-    static ResultCode Factory(const UUID& iid, void** const pInterface, const BaseConstructionInfo* const pConstructionInfo) noexcept
+    static EResultCode Factory(const UUID& iid, void** const pInterface, const BaseConstructionInfo* const pConstructionInfo) noexcept
     {
         if(!pInterface)
         {
@@ -210,14 +210,14 @@ private:
     C8DynString m_PrefixString;
 };
 
-ResultCode RegisterConsolePrinter(IComManager* const comManager) noexcept
+EResultCode RegisterConsolePrinter(IComManager* const comManager) noexcept
 {
     if(!comManager)
     {
         return RC_NullParam;
     }
 
-    ResultCode result = comManager->RegisterIidFactory(iid_of<IConsolePrinter>, ConsolePrinter::Factory);
+    EResultCode result = comManager->RegisterIidFactory(iid_of<IConsolePrinter>, ConsolePrinter::Factory);
 
     if(IsFailure(result) && result != RC_FactoryAlreadyRegistered)
     {

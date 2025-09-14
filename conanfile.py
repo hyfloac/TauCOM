@@ -1,12 +1,9 @@
 from conan import ConanFile
 from conan.tools.cmake import CMakeToolchain, CMake, cmake_layout, CMakeDeps
-from conan.tools.files import get
-from conan.tools.scm import Git
 
 class TauCOMRecipe(ConanFile):
     name = "taucom"
     package_type = "library"
-    requires = "tauutils/[^1.1.1]"
 
     # Optional metadata
     license = ""
@@ -16,27 +13,28 @@ class TauCOMRecipe(ConanFile):
 
     # Binary configuration
     settings = "os", "compiler", "build_type", "arch"
-    options = { "shared": [True] }
-    default_options = { "shared": True }
+    options = {
+        "shared": [ True, False ],
+        "useTauUtils": [ True, False ]
+    }
+    default_options = {
+        "shared": True,
+        "useTauUtils": False
+    }
 
     # Sources are located in the same place as this recipe, copy them to the recipe
-    exports_sources = "CMakeLists.txt", "src/*", "include/*"
+    exports_sources = "CMakeLists.txt", "cmake/*", "src/*", "include/*"
 
     def set_version(self):
-        self.version = self.conan_data["latest"];
-
-    # def source(self):
-    #     data = self.conan_data["sources"][self.version];
-    #     repo = self.conan_data["sources"]["repos"][data["url"]]
-    #     git = Git(self)
-    #     git.clone(url=repo, target=".")
-    #     if(not ("latest" in data)):
-    #         git.checkout(data["target"])
-    #     git.run("submodule update --init --recursive")
+        self.version = self.conan_data["latest"]
 
     def config_options(self):
         if self.settings.os == "Windows":
             self.options.rm_safe("fPIC")
+
+    def requirements(self):
+        if self.options.useTauUtils:
+            self.requires("tauutils/[^1.3.3]")
 
     def configure(self):
         return
@@ -48,6 +46,8 @@ class TauCOMRecipe(ConanFile):
         deps = CMakeDeps(self)
         deps.generate()
         tc = CMakeToolchain(self)
+        tc.variables["BUILD_SHARED_LIBS"] = self.options.shared
+        tc.variables["USE_TAU_UTILS"] = self.options.useTauUtils
         tc.generate()
 
     def build(self):
@@ -60,7 +60,7 @@ class TauCOMRecipe(ConanFile):
         cmake.install()
 
     def package_info(self):
-        self.cpp_info.libs = ["taucom"]
+        self.cpp_info.libs = ["TauCOM"]
     
 
     

@@ -1,19 +1,40 @@
 // ReSharper disable CppInconsistentNaming
+// ReSharper disable CppDFAUnreachableFunctionCall
 #pragma once
 
 #include <unordered_map>
-#include <new>
 #include <functional>
+#include <cstdint>
 
+#ifdef TAU_COM_USE_TAU_UTILS
 #include <TauMacros.hpp>
-#include <NumTypes.hpp>
-#include <Objects.hpp>
+#endif
+
+#ifndef DYNAMIC_EXPORT
+    #if defined(_WIN32)
+      #define DYNAMIC_EXPORT __declspec(dllexport)
+    #elif defined(__GNUC__) || defined(__clang__)
+      #define DYNAMIC_EXPORT __attribute__((visibility("default")))
+    #else
+      #define DYNAMIC_EXPORT
+    #endif
+#endif
+
+#ifndef DYNAMIC_IMPORT
+    #if defined(_WIN32)
+      #define DYNAMIC_IMPORT __declspec(dllimport)
+    #elif defined(__GNUC__) || defined(__clang__)
+      #define DYNAMIC_IMPORT
+    #else
+      #define DYNAMIC_IMPORT
+    #endif
+#endif
 
 #ifdef TAU_COM_BUILD_SHARED
   #define TAU_COM_LIB DYNAMIC_EXPORT
 #elif defined(TAU_COM_IMPORT_SHARED) || 1
   #define TAU_COM_LIB DYNAMIC_IMPORT
-#else
+#elif defined(TAU_COM_BUILD_STATIC)
   #define TAU_COM_LIB
 #endif
 
@@ -22,12 +43,12 @@ namespace tau::com {
 struct UUID final
 {
 public:
-    u64 Low;
-    u64 High;
+    ::std::uint64_t Low;
+    ::std::uint64_t High;
 public:
     constexpr UUID() noexcept = default;
 
-    constexpr UUID(const u64 low, const u64 high) noexcept
+    constexpr UUID(const ::std::uint64_t low, const ::std::uint64_t high) noexcept
         : Low(low)
         , High(high)
     { }
@@ -53,16 +74,16 @@ struct hash<::tau::com::UUID>
 {
     [[nodiscard]] ::std::size_t operator()(const ::tau::com::UUID& uuid) const noexcept
     {
-        if constexpr(sizeof(::std::size_t) == sizeof(u64))
+        if constexpr(sizeof(::std::size_t) == sizeof(::std::uint64_t))
         {
             return uuid.Low ^ uuid.High;
         }
-        else if constexpr(sizeof(::std::size_t) == sizeof(u32))
+        else if constexpr(sizeof(::std::size_t) == sizeof(::std::uint32_t))
         {
-            const u32 lh = static_cast<u32>(uuid.Low >> 32);
-            const u32 ll = static_cast<u32>(uuid.Low & 0xFFFFFFFF);
-            const u32 hh = static_cast<u32>(uuid.High >> 32);
-            const u32 hl = static_cast<u32>(uuid.High & 0xFFFFFFFF);
+            const ::std::uint32_t lh = static_cast<::std::uint32_t>(uuid.Low >> 32);
+            const ::std::uint32_t ll = static_cast<::std::uint32_t>(uuid.Low & 0xFFFFFFFF);
+            const ::std::uint32_t hh = static_cast<::std::uint32_t>(uuid.High >> 32);
+            const ::std::uint32_t hl = static_cast<::std::uint32_t>(uuid.High & 0xFFFFFFFF);
             return lh ^ ll ^ hh ^ hl;
         }
     }
@@ -70,11 +91,30 @@ struct hash<::tau::com::UUID>
 
 }
 
+#if __has_include(<EASTL/functional.h>)
+#include <EASTL/functional.h>
+
+namespace eastl {
+
+template<>
+struct hash<::tau::com::UUID>
+{
+    [[nodiscard]] ::std::size_t operator()(const ::tau::com::UUID& uuid) const noexcept
+    {
+        return ::std::hash<::tau::com::UUID>()(uuid);
+    }
+};
+
+}
+#endif
+
 namespace tau::com {
 
+// ReSharper disable once CppTemplateParameterNeverUsed
 template<typename T>
 struct ComUUID final
 {
+    // ReSharper disable once CppRedundantInlineSpecifier
     static inline constexpr UUID IID = UUID(0x0000000000000000ull, 0x0000000000000000ull);
 };
 
@@ -92,7 +132,7 @@ inline constexpr const UUID& uuid_of = ComUUID<T>::IID;
 template<typename T>
 inline constexpr const UUID& iid_of = ComUUID<T>::IID;
 
-enum ResultCode : i32
+enum EResultCode : ::std::int32_t
 {
     RC_Success = 0,
     RC_NullParam = -1,
@@ -100,39 +140,55 @@ enum ResultCode : i32
     RC_Fail = -3,
     RC_InitializationError = -4,
     RC_InvalidParam = -5,
+    RC_OutOfMemory = -6,
+    RC_NotReady = -7,
     RC_FactoryAlreadyRegistered = 1,
     RC_Timeout = 2,
     RC_AsyncReturn = 3,
+    RC_MoreItems = 4,
 };
 
-static bool IsSuccess(const ResultCode result) noexcept { return static_cast<i32>(result) >= 0; }
-static bool IsFailure(const ResultCode result) noexcept { return !IsSuccess(result); }
+static bool IsSuccess(const EResultCode result) noexcept { return static_cast<::std::int32_t>(result) >= 0; }
+static bool IsFailure(const EResultCode result) noexcept { return !IsSuccess(result); }
 
 struct BaseConstructionInfo
 {
-    DEFAULT_CONSTRUCT_PU(BaseConstructionInfo);
-    DEFAULT_CM_PU(BaseConstructionInfo);
-    DEFAULT_DESTRUCT_VI(BaseConstructionInfo);
 public:
     UUID Iid;
     const BaseConstructionInfo* pNext;
+public:
+    BaseConstructionInfo() noexcept = default;
+    virtual ~BaseConstructionInfo() noexcept = default;
+
+    BaseConstructionInfo(const BaseConstructionInfo& copy) noexcept = default;
+    BaseConstructionInfo(BaseConstructionInfo&& move) noexcept = default;
+
+    BaseConstructionInfo& operator=(const BaseConstructionInfo& copy) noexcept = default;
+    BaseConstructionInfo& operator=(BaseConstructionInfo&& move) noexcept = default;
 };
 
 class IUnknown
 {
-    DEFAULT_CONSTRUCT_PO(IUnknown);
-    DEFAULT_CM_PO(IUnknown);
-    DEFAULT_DESTRUCT_VI(IUnknown);
 public:
     using ConstructionInfo = BaseConstructionInfo;
+protected:
+    IUnknown() noexcept = default;
 public:
-    virtual i32 AddReference() noexcept = 0;
-    virtual i32 ReleaseReference() noexcept = 0;
+    virtual ~IUnknown() noexcept = default;
+protected:
+    IUnknown(const IUnknown& copy) noexcept = default;
+    IUnknown(IUnknown&& move) noexcept = default;
 
-    virtual ResultCode QueryInterface(const UUID& iid, void** const pInterface) noexcept = 0;
+    IUnknown& operator=(const IUnknown& copy) noexcept = default;
+    IUnknown& operator=(IUnknown&& move) noexcept = default;
+public:
+    virtual ::std::int32_t AddReference() noexcept = 0;
+    virtual ::std::int32_t ReleaseReference() noexcept = 0;
+
+    virtual EResultCode QueryInterface(const UUID& iid, void** const pInterface) noexcept = 0;
 
     template<typename T>
-    ResultCode QueryInterface(T** pInterface) noexcept
+    EResultCode QueryInterface(T** pInterface) noexcept
     {
         return QueryInterface(iid_of<T>, reinterpret_cast<void**>(pInterface));
     }
@@ -151,7 +207,7 @@ public:
         : m_Ptr(ptr)
     { }
 
-    ComRef(nullptr_t) noexcept
+    ComRef(::std::nullptr_t) noexcept
         : m_Ptr(nullptr)
     { }
 
@@ -172,7 +228,7 @@ public:
         move.m_Ptr = nullptr;
     }
 
-    ComRef<T>& operator=(nullptr_t) noexcept
+    ComRef<T>& operator=(::std::nullptr_t) noexcept
     {
         ReleaseReference();
 
@@ -223,7 +279,7 @@ public:
     [[nodiscard]] bool operator==(const ComRef<T>& other) const noexcept { return m_Ptr == other.m_Ptr; }
     [[nodiscard]] bool operator!=(const ComRef<T>& other) const noexcept { return !(*this == other); }
 
-    i32 AddReference() noexcept
+    ::std::int32_t AddReference() noexcept
     {
         if(m_Ptr)
         {
@@ -232,7 +288,7 @@ public:
         return 0;
     }
 
-    i32 ReleaseReference() noexcept
+    ::std::int32_t ReleaseReference() noexcept
     {
         if(m_Ptr)
         {
@@ -246,33 +302,47 @@ private:
 
 class IComManager : public IUnknown
 {
-    DEFAULT_CONSTRUCT_PO(IComManager);
-    DEFAULT_CM_PO(IComManager);
-    DEFAULT_DESTRUCT_VI(IComManager);
 public:
-    using ComFactoryFunc = ResultCode(*)(const UUID& iid, void** pInterface, const BaseConstructionInfo* const pConstructionInfo);
+    using ComFactoryFunc = EResultCode(*)(const UUID& iid, void** pInterface, const BaseConstructionInfo* const pConstructionInfo);
     using FactoryMap = ::std::unordered_map<UUID, ComFactoryFunc>;
 
     struct ConstructionInfo final : BaseConstructionInfo
     {
-        DEFAULT_CONSTRUCT_PU(ConstructionInfo);
-        DEFAULT_CM_PU(ConstructionInfo);
-        DEFAULT_DESTRUCT(ConstructionInfo);
     public:
         FactoryMap Factories;
+    public:
+        ConstructionInfo() noexcept = default;
+        ~ConstructionInfo() override = default;
+
+        ConstructionInfo(const ConstructionInfo& copy) noexcept = default;
+        ConstructionInfo(ConstructionInfo&& move) noexcept = default;
+
+        ConstructionInfo& operator=(const ConstructionInfo& copy) noexcept = default;
+        ConstructionInfo& operator=(ConstructionInfo&& move) noexcept = default;
     };
+protected:
+    IComManager() noexcept = default;
 public:
-    virtual ResultCode RegisterIidFactory(const UUID& iid, const ComFactoryFunc factory) noexcept = 0;
-    virtual ResultCode CreateObject(const UUID& iid, void** const pInterface, const BaseConstructionInfo* const pConstructionInfo) noexcept = 0;
+    ~IComManager() noexcept override = default;
+protected:
+    IComManager(const IComManager& copy) noexcept = default;
+    IComManager(IComManager&& move) noexcept = default;
+
+    IComManager& operator=(const IComManager& copy) noexcept = default;
+    IComManager& operator=(IComManager&& move) noexcept = default;
+public:
+    virtual EResultCode RegisterIidFactory(const UUID& iid, const ComFactoryFunc factory) noexcept = 0;
+    virtual EResultCode CreateObject(const UUID& iid, void** const pInterface, const BaseConstructionInfo* const pConstructionInfo) noexcept = 0;
 
     template<typename T>
-    ResultCode CreateObject(T** const pInterface, const typename T::ConstructionInfo* const pConstructionInfo) noexcept
+    // ReSharper disable once CppRedundantTypenameKeyword
+    EResultCode CreateObject(T** const pInterface, const typename T::ConstructionInfo* const pConstructionInfo) noexcept
     {
         return CreateObject(iid_of<T>, reinterpret_cast<void**>(pInterface), static_cast<const BaseConstructionInfo*>(pConstructionInfo));
     }
 
     template<typename T>
-    ResultCode CreateObject(T** const pInterface) noexcept
+    EResultCode CreateObject(T** const pInterface) noexcept
     {
         return CreateObject(iid_of<T>, reinterpret_cast<void**>(pInterface), nullptr);
     }
@@ -280,13 +350,20 @@ public:
 
 class IComManager1 : public IComManager
 {
-    DEFAULT_CONSTRUCT_PO(IComManager1);
-    DEFAULT_CM_PO(IComManager1);
-    DEFAULT_DESTRUCT_VI(IComManager1);
+protected:
+    IComManager1() noexcept = default;
 public:
-    virtual ResultCode UnregisterIidFactory(const UUID& iid) noexcept = 0;
-    virtual ResultCode GetIidFactory(const UUID& iid, ComFactoryFunc* const factory) noexcept = 0;
-    virtual ResultCode Duplicate(IComManager1** const comManager) noexcept = 0;
+    ~IComManager1() noexcept override = default;
+protected:
+    IComManager1(const IComManager1& copy) noexcept = default;
+    IComManager1(IComManager1&& move) noexcept = default;
+
+    IComManager1& operator=(const IComManager1& copy) noexcept = default;
+    IComManager1& operator=(IComManager1&& move) noexcept = default;
+public:
+    virtual EResultCode UnregisterIidFactory(const UUID& iid) noexcept = 0;
+    virtual EResultCode GetIidFactory(const UUID& iid, ComFactoryFunc* const factory) noexcept = 0;
+    virtual EResultCode Duplicate(IComManager1** const comManager) noexcept = 0;
 };
 
 }
@@ -295,5 +372,4 @@ TAU_DECL_UUID(::tau::com::IUnknown, 0x89D0171D1E547699ull, 0x3513C89A25664A40ull
 TAU_DECL_UUID(::tau::com::IComManager, 0xA84460A844FB841Cull, 0x8441F8C9B9F14C8Dull);
 TAU_DECL_UUID(::tau::com::IComManager1, 0x2F6E3C1FFB854DD1ull, 0x8A17434B93524BB7ull);
 
-
-extern "C" TAU_COM_LIB ::tau::com::ResultCode TauComGetComManager(::tau::com::IComManager** const pInterface) noexcept;
+extern "C" TAU_COM_LIB ::tau::com::EResultCode TauComGetComManager(::tau::com::IComManager** const pInterface) noexcept;
